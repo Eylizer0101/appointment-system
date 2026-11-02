@@ -1,0 +1,605 @@
+<% layout('layout') %>
+<!-- Include Vue CDN in your layout (before closing body) -->
+
+<style>
+  .disabled-link {
+    opacity: 0.5;
+    pointer-events: none; /* disables the click */
+    cursor: not-allowed;
+  }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+</style>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<div id="app">
+  <!-- Appointment Details -->
+  <div class="col justifyStart paddingInline20 gap5">
+
+    <div class="height0 justifyBetween">
+      <div class="width0 gap10 padding5">
+        <a :href="backUrl" class="nav"><i class="fas fa-chevron-left"></i> Previous</a> |
+        <p class="size40 str400">Appointment Details</p>
+      </div>
+
+      <div class="width0 justifyEnd gap10 padding5">
+        <template v-if="appointment.status === 'Pending' && appointment.archive === 0">
+          <a href="javascript:void(0)" class="nav" @click="archive" >
+            <i class="fas fa-archive"></i>Move to Archive
+          </a>
+        </template>
+
+        <template v-else-if="appointment.status === 'Pending' && appointment.archive === 1">
+          <a href="javascript:void(0)" class="nav" @click="unarchive" >
+            <i class="fas fa-archive"></i>Remove from Archive
+          </a>
+        </template>
+
+        <a 
+          href="javascript:void(0)" 
+          class="nav" 
+          :class="{ 'disabled-link': appointment.status === 'Cancelled' || appointment.status === 'Success' }"
+          @click="(appointment.status !== 'Cancelled' && appointment.status !== 'Success') ? showUpdateCard = true : null"
+        >
+          <i class="fas fa-pen"></i> Update Details
+        </a>
+
+        <template v-if="appointment.status === 'Pending'">
+          <a href="javascript:void(0)" class="nav" @click="updateStatus('Cancelled')">
+            <i class="fas fa-xmark-circle w15"></i> Cancel
+          </a>
+
+          <a v-if="appointment.pay === 'Paid'" href="javascript:void(0)" class="nav pnav"
+             @click="updateStatus('Success')">
+            <i class="fas fa-check-circle w15"></i> Success
+          </a>
+        </template>
+
+        <template v-else-if="appointment.status === 'Cancelled'">
+          <a href="javascript:void(0)" class="nav" @click="revertAction">
+            <i class="fas fa-arrows-rotate w15"></i> Revert Action
+          </a>
+        </template>
+
+        <template v-else-if="appointment.status === 'Success'">
+          <a href="javascript:void(0)" class="nav" @click="revertAction">
+            <i class="fas fa-arrows-rotate w15"></i> Revert Action
+          </a>
+        </template>
+
+<a 
+  v-if="appointment.pay === 'Unpaid' && appointment.status !== 'Cancelled'" 
+  href="javascript:void(0)" 
+  class="nav pnav" 
+  @click="markPaid"
+>
+  <i class="fas fa-coins w15"></i> Mark as Paid
+</a>
+      </div>
+    </div>
+
+    <!-- Client Info -->
+    <div class="height80 bgSoft borderRadius10 overflow-y1 alignStart padding30 gap20">
+      <div class="bgWhite darkShadow borderRadius10 col alignStart justifyStart padding30 gap10 width30 height0 relative">
+        <a href="" class="nav cnav absolute right10 top10"><i class="fas fa-user"></i></a>
+        <p class="size22 str500 colorPrimary">Client's Information</p>
+        <hr>
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Complete Name</p>
+          <p class="size20 str500">{{ appointment.bookBy }}</p>
+        </div>
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Address</p>
+          <p class="size20 str500">{{ fullAddress }}</p>
+        </div>
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Phone</p>
+          <p class="size20 str500">{{ appointment.phone }}</p>
+        </div>
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Landmark</p>
+          <p class="size20 str500">{{ appointment.landmark }}</p>
+        </div>
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Email</p>
+          <p class="size20 str500">{{ appointment.email }}</p>
+        </div>
+      </div>
+
+      <!-- Package Info -->
+      <div class="bgWhite darkShadow borderRadius10 col alignStart justifyStart padding30 gap10 width30 height0 relative">
+        <a href="" class="nav cnav absolute right10 top10"><i class="fas fa-tags"></i></a>
+        <p class="size22 str500 colorPrimary">Package Information</p>
+        <hr>
+
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Event Type</p>
+          <p class="size20 str500">{{ appointment.event || 'Unknown' }} <span v-if="appointment.otherEvent">- {{ appointment.otherEvent }}</span></p>
+        </div>
+
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Availed Package</p>
+          <p class="size20 str500">{{ appointment.package }}</p>
+        </div>
+
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Book At</p>
+          <p class="size20 str500">{{ formatDate(appointment.createdAt) }}</p>
+        </div>
+
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Scheduled Date</p>
+          <p class="size20 str500">{{ scheduleDate }}</p>
+        </div>
+
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Package Cost</p>
+          <p class="size20 str500">{{ packageCost }}</p>
+        </div>
+
+        <div class="height0 col alignStart">
+          <p class="size16 gray str400">Status</p>
+          <div class="height0 width0 gap5">
+            <p :class="statusClass" class="white padding5 borderRadius5 size14" style="width: fit-content !important;">
+              {{ appointment.status }}
+            </p>
+
+            <p v-if="appointment.status !== 'Cancelled'" :class="payClass" class="white padding5 borderRadius5 size14"
+               style="width: fit-content !important;">
+              <i class="fas fa-coins inline"></i> {{ appointment.pay }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Card Modal -->
+  <div class="absolute top0 left0 bgModal overflow-y1 alignStart padding30 index60" v-if="showUpdateCard">
+    <div class="height0 padding30 width35 borderRadius15 relative bgWhite">
+      <a href="javascript:void(0)" class="nav cnav absolute top10 right10 index50" @click="showUpdateCard = false">
+        <i class="fas fa-xmark"></i>
+      </a>
+
+      <form :action="`/update-book`" method="POST" class="padding5 gap10">
+        <input type="hidden" name="id" :value="appointment._id">
+            <div class="field">
+                <p class="size30 str500">Update Appointment</p>
+            </div>
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-user inline marginRight5"></i>Client or Contact Person</p>
+                <hr>
+            </div>
+
+            <div class="field">
+                <label>Complete Name</label>
+                <input type="text" v-model="form.name" @input="sanitizeField('name')" name="bookBy" required>
+            </div>
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-house inline marginRight5"></i>Location Info</p>
+                <hr>
+            </div>
+            
+            <div class="field">
+                <label>House No. & Purok</label>
+                <input type="text" v-model="form.purok" @input="sanitizeField('purok')" name="purok" required>
+            </div>
+
+            <div class="height0 gap10">
+                <div class="field">
+                    <label>Barangay</label>
+                    <input type="text" v-model="form.barangay" @input="sanitizeField('barangay')" name="barangay" required>
+                </div>
+                <div class="field">
+                    <label>City</label>
+                    <input type="text" v-model="form.city" @input="sanitizeField('city')" name="city" required>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label>Province</label>
+                <input type="text" v-model="form.province" @input="sanitizeField('province')" name="province" required>
+            </div>
+            
+            <div class="field">
+                <label>Landmark</label>
+                <input type="text" v-model="form.landmark" @input="sanitizeField('landmark')" name="landmark" required>
+            </div>
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-address-book inline marginRight5"></i>Contact Info</p>
+                <hr>
+            </div>
+
+            <div class="height0 gap10">
+                <div class="field">
+                    <label>Phone</label>
+                    <input type="text" v-model="form.phone" @input="validatePhone" name="phone" required>
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" v-model="form.email" @blur="validateEmail()" name="email" required>
+                </div>
+            </div>
+
+            <p v-if="emailError" style="color:red">{{ emailError }}</p>
+
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-calendar inline marginRight5"></i>Appointment Info</p>
+                <hr>
+            </div>
+            <div class="field">
+                <label>Type of Event</label>
+                <div class="selectBar">
+                    <select name="event" v-model="form.event" required>
+                        <option value="" disabled>--Select Event--</option>
+                        <option v-for="e in events" :key="e" :value="e">{{ e }}</option>
+                    </select>
+
+                </div>
+
+                <div v-if="form.event === 'Others'" style="margin-top:10px;">
+                    <label>Please specify:</label>
+                <input 
+                    type="text" 
+                    name="otherEvent"
+                    v-model="form.otherEvent"
+                    @input="sanitizeField('otherEvent')"
+                    placeholder="Enter specific event type"
+                    >
+                </div>
+
+            </div>
+
+            <div class="field">
+                <label>Package</label>
+                <div class="selectBar">
+                    <select name="package" v-model="form.package" required>
+                        <option value="" disabled selected>--Select Package--</option>
+                        <option v-for="(label, code) in packages" :key="code" :value="code">{{ label }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="height0 gap5">
+            <div class="field">
+                <label>Start At</label>
+                <input type="date" v-model="form.startAt" :min="minStartDate" @change="checkConflict" id="startAt" name="startAt" required>
+            </div>
+            <div class="field">
+                <label>End At</label>
+                <input type="date" v-model="form.endAt" :min="form.startAt" :disabled="!form.startAt" @change="checkConflict" id="endAt" name="endAt" required>
+            </div>
+            </div>
+
+            <div v-if="conflicts.length" class="warning">
+                <p class="size12" style="background-color: rgb(255, 245, 245); color: rgb(155, 0, 0);">
+                The following dates are already booked:
+                {{ formattedConflicts }}
+                </p>
+            </div>
+
+            <!-- <div id="dateWarning" class="height0 padding10 borderRadius10" style="display:none; background-color: rgb(255, 245, 245); color: rgb(155, 0, 0);"> </div>-->
+
+            <div class="height0 bgSoft borderRadius15 padding20 col textCenter">
+                Kindly make sure all details are correct before submitting your booking. This action can’t be undone once submitted
+            </div>
+
+            <div class="height0 justifyEnd padding5">
+                <button type="submit" class="nav pnav w100" :disabled="conflicts.length > 0 || invalidEmail">Submit</button>
+            </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Notification -->
+  <div v-if="message" class="absolute top0 left0 bgModal padding30 index60">
+    <div class="height0 padding30 width30 borderRadius15 relative bgWhite col gap5">
+      <div class="h95 w98 relative borderRadius500 borderGray">
+        <i class="fas fa-bell size60 black h65 w65 absolute right10 bottom10" style="transform: rotate(-20deg);"></i>
+        <i class="fas fa-heart size20 yellow h20 w20 absolute left10 bottom20" style="transform: rotate(10deg);"></i>
+        <i class="fas fa-star size22 yellow h25 w25 absolute left5 bottom45" style="transform: rotate(-15deg);"></i>
+      </div>
+      <p class="size40 str500">Notification</p>
+      <p class="size14 str400 textCenter">{{ message }}</p>
+      <br>
+      <a href="javascript:void(0)" class="nav index50 border0 width50" @click="message=''">Got it!</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, reactive, ref, computed, onMounted, watch } = Vue;
+
+createApp({
+  setup() {
+    const appointment = reactive(<%- JSON.stringify(appointment) %>); // EJS raw output
+    const message = ref('<%= message || "" %>');
+    const showUpdateCard = ref(false);
+    
+
+    const backUrl = computed(() => appointment.back === 'archiv' ? '/archive' : '/app');
+
+    // ------------------------
+    // Admin Update Form
+    // ------------------------
+
+    const updateStatus = async (newStatus) => {
+      if (!confirm(`Are you sure you want to mark this appointment as ${newStatus}?`)) return;
+
+      try {
+        const res = await fetch('/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: appointment._id, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          appointment.status = newStatus;
+          alert(`Status updated to ${newStatus}`);
+        } else {
+          alert(`Failed: ${data.message}`);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error updating status");
+      }
+    };
+
+    const markPaid = async () => {
+      if (!confirm("Mark this appointment as Paid?")) return;
+      try {
+        const res = await fetch('/update-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: appointment._id })
+        });
+        const data = await res.json();
+        if (data.success) appointment.pay = 'Paid';
+        else alert(`Failed: ${data.message}`);
+      } catch (err) {
+        console.error(err);
+        alert("Error marking as paid");
+      }
+    };
+
+    const archive = async () => {
+      if (!confirm("Move this appointment to archive?")) return;
+      try {
+        const res = await fetch('/archiv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: appointment._id })
+        });
+        const data = await res.json();
+        if (data.success) appointment.archive = 1;
+        else alert(`Failed: ${data.message}`);
+      } catch (err) {
+        console.error(err);
+        alert("Error archiving");
+      }
+    };
+
+    const unarchive = async () => {
+      if (!confirm("Remove this appointment from archive?")) return;
+      try {
+        const res = await fetch('/archiv2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: appointment._id })
+        });
+        const data = await res.json();
+        if (data.success) appointment.archive = 0;
+        else alert(`Failed: ${data.message}`);
+      } catch (err) {
+        console.error(err);
+        alert("Error restoring");
+      }
+    };
+
+    const revertAction = async () => {
+      if (!confirm("Revert this appointment to Pending and mark as Unpaid?")) return;
+      try {
+        const res = await fetch('/revert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: appointment._id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          appointment.status = 'Pending';
+          appointment.pay = 'Unpaid';
+        } else {
+          alert(`Failed: ${data.message}`);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error reverting");
+      }
+    };
+
+
+    const events = ['Birthday','Debut','Wedding','Baptism','Anniversary','Funeral','Corporate Event','Reunion','Festival','Charity Event','Community Gathering','Others'];
+    const packages = { Basic: 'Basic Package', Standard: 'Standard Package', Premium: 'Premium Package' };
+
+    // pre-filled reactive form
+    const form = reactive({
+      name: appointment.bookBy || '',
+      purok: appointment.purok || '',
+      barangay: appointment.barangay || '',
+      city: appointment.city || '',
+      province: appointment.province || '',
+      landmark: appointment.landmark || '',
+      phone: appointment.phone || '',
+      email: appointment.email || '',
+      event: events.includes(appointment.event) ? appointment.event : 'Others',
+      otherEvent: appointment.otherEvent || '',
+      package: appointment.package || '',
+      startAt: appointment.startAt ? appointment.startAt.split('T')[0] : '',
+      endAt: appointment.endAt ? appointment.endAt.split('T')[0] : ''
+    });
+
+    const minStartDate = computed(() => {
+      const now = new Date();
+      now.setDate(now.getDate() + 2);
+      const tzDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+      return tzDate.toISOString().split('T')[0];
+    });
+
+    // All other booked dates (excluding current appointment)
+    const allOtherBooked = ref([]);
+
+    // Computed conflicts based on form dates
+    const conflicts = computed(() => {
+      if (!form.startAt || !form.endAt) return [];
+
+      const start = new Date(form.startAt);
+      const end = new Date(form.endAt);
+
+      return allOtherBooked.value.filter(b => {
+        const bStart = new Date(b.startAt);
+        const bEnd = new Date(b.endAt);
+        return bStart <= end && bEnd >= start; // overlap check
+      });
+    });
+
+    const sanitizeField = (field) => {
+      if (form[field] !== undefined) {
+        form[field] = form[field].replace(/[^\p{L}\p{N}'\- ]/gu, '');
+      }
+    };
+
+    // Phone validation: only digits, max 11
+    const validatePhone = () => {
+      if (form.phone !== undefined) {
+        form.phone = form.phone.replace(/[^0-9]/g, '').slice(0, 11);
+      }
+    };
+
+    // Email validation
+    const emailError = ref('');
+    const invalidEmail = ref(false);
+
+    const validateEmail = () => {
+      if (!form.email) return;
+
+      const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!pattern.test(form.email)) {
+          emailError.value = "Invalid email format";
+          invalidEmail.value = true;
+      } else {
+          emailError.value = '';
+          invalidEmail.value = false;
+      }
+    };
+
+    const formattedConflicts = computed(() =>
+      conflicts.value.map(c =>
+        `${new Date(c.startAt).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })} – ${new Date(c.endAt).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}`
+      ).join(', ')
+    );
+
+    onMounted(async () => {
+      try {
+        const res = await fetch(`/booked-dates2?id=${appointment._id}`);
+        const allBooked = await res.json();
+        // exclude current appointment
+        allOtherBooked.value = allBooked.filter(b => b._id !== appointment._id);
+      } catch (err) {
+        console.error("Error fetching booked dates:", err);
+      }
+    });
+
+    const submitUpdate = () => {
+      document.getElementById('updateForm').submit();
+    };
+
+    const disableUpdate = computed(() => appointment.status === 'Cancelled' || appointment.status === 'Success');
+
+    // ------------------------
+    // Other appointment info / actions
+    // ------------------------
+    const fullAddress = computed(() =>
+      `${appointment.purok}, ${appointment.barangay}, ${appointment.city}, ${appointment.province}`
+    );
+
+    const formatDate = (dateStr) =>
+      new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    const scheduleDate = computed(() => {
+      const start = new Date(appointment.startAt);
+      const end = new Date(appointment.endAt);
+      const sameMonth = start.getMonth() === end.getMonth();  
+      const sameYear = start.getFullYear() === end.getFullYear();
+      const startMonth = start.toLocaleString('en-US', { month: 'short' });
+      const endMonth = end.toLocaleString('en-US', { month: 'short' });
+      if (sameMonth && sameYear) return `${startMonth} ${start.getDate()} – ${end.getDate()}, ${start.getFullYear()}`;
+      else if (sameYear) return `${startMonth} ${start.getDate()} – ${endMonth} ${end.getDate()}, ${start.getFullYear()}`;
+      else return `${startMonth} ${start.getDate()}, ${start.getFullYear()} – ${endMonth} ${end.getDate()}, ${end.getFullYear()}`;
+    });
+
+    const packageCost = computed(() => {
+      if (appointment.package === 'Basic') return 'P 5,000.00';
+      if (appointment.package === 'Premium') return 'P 20,000.00';
+      return 'P 10,000.00';
+    });
+
+    const statusClass = computed(() => {
+      if (appointment.status === 'Pending') return 'bgYellow';
+      if (appointment.status === 'Success') return 'bgGreen';
+      if (appointment.status === 'Cancelled') return 'bgRed';
+      return '';
+    });
+
+    const payClass = computed(() => appointment.pay === 'Paid' ? 'bgGreen' : 'bgGray');
+
+    watch(() => form.startAt, (newVal) => {
+      if (!newVal) {
+        form.endAt = '';
+      } else if (form.endAt && form.endAt < newVal) {
+        form.endAt = '';
+      }
+    });
+
+    return {
+      appointment,
+      message,
+      showUpdateCard,
+      backUrl,
+      fullAddress,
+      formatDate,
+      scheduleDate,
+      packageCost,
+      statusClass,
+      payClass,
+      events,
+      packages,
+      form,
+      conflicts,
+      formattedConflicts,
+      minStartDate,
+      submitUpdate,
+      disableUpdate,
+      sanitizeField,
+      validatePhone,
+      validateEmail,
+      emailError,
+      invalidEmail,
+      archive,
+      unarchive,
+      updateStatus,
+      revertAction,
+      markPaid
+    };
+  }
+}).mount('#app');
+</script>

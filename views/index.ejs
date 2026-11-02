@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banda ni Shaho</title>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/responsive.css?v=hero-art-lowered-more-20261102">
+    <link rel="icon" href="/images/logo.png">
+
+    <style>
+    </style>
+</head>
+<body class="banda-landing abstractBG alignStart col padding40 relative blockX overflow-y1" style="padding-inline: 10%;">
+    <!-- Banda ni Shaho: public navigation (existing routes only). -->
+    <header class="banda-public-header">
+        <nav class="banda-public-nav" aria-label="Main navigation">
+            <a class="banda-public-brand" href="/" aria-label="Banda ni Shaho home">
+                <img src="/images/logo.png" alt="" onerror="this.style.display='none'">
+                <span>Banda ni Shaho</span>
+            </a>
+            <button class="banda-public-toggle" type="button" aria-label="Open navigation menu" aria-controls="banda-public-links" aria-expanded="false">
+                <i class="fas fa-bars" aria-hidden="true"></i>
+            </button>
+            <div class="banda-public-links" id="banda-public-links">
+                <a class="banda-public-login" href="/lg">Login</a>
+            </div>
+        </nav>
+    </header>
+    <script>
+      (function () {
+        const toggle = document.querySelector('.banda-public-toggle');
+        const links = document.getElementById('banda-public-links');
+        if (!toggle || !links) return;
+        function setMenu(open) {
+          links.classList.toggle('is-open', open);
+          toggle.setAttribute('aria-expanded', String(open));
+          toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+          const icon = toggle.querySelector('i');
+          if (icon) icon.className = open ? 'fas fa-times' : 'fas fa-bars';
+        }
+        toggle.addEventListener('click', () => setMenu(toggle.getAttribute('aria-expanded') !== 'true'));
+        links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+        document.addEventListener('click', e => { if (!e.target.closest('.banda-public-nav')) setMenu(false); });
+      })();
+    </script>
+
+    <a href="/genr" class="nav pnav width0 hidden" style="opacity:0;">genr</a>
+    <div class="height0 absolute top10 left50 padding10 gap10 width0 hidden">
+        <a href="/pr" class="nav transparent liquid">PACKAGES</a>
+        <a href="/rg" class="nav transparent liquid">BOOK NOW</a>
+        |
+        <a href="/lg" class="nav transparent w80 liquid">ADMIN</a>
+    </div>
+    <video autoplay muted loop playsinline class="absolute width38 borderPrimary borderRadius30" style="opacity: 0.05; left: 52%; z-index: 0; top: 40%;">
+        <source src="/images/video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="banda-hero-art height0 width50 absolute right10 top50 padding10 justifyEnd">
+        <video autoplay muted loop playsinline class="absolute width35 borderRadius15 glowImg" style="display: none; opacity: 0; left: 15%; z-index: 5; top: 36%;">
+            <source src="/images/video.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <p class="size100 str400 absolute left100 top20 gradientText upperCase"> &nbsp; Banda &nbsp;</p>
+        <p class="size80 str400 absolute left100 top100 gradientText"> &nbsp;ni Shaho &nbsp;</p>
+        <img src="/images/gem.png" alt="" class="w500 glowImg2" style="transform: rotate(10deg); margin-top: 40px; margin-right: 10px;">
+    </div>
+
+    <div class="banda-hero-copy height0 width50 padding10 borderRadius20 col gap10 marginTop50" style="z-index: 100;">
+        <p class="size40 str400">Creating Meaningful Moments Through Live Music</p>
+        <p class="size20">Banda ni Shaho delivers unforgettable live performances for birthdays, weddings, festivals, and more</p>
+        <div class="banda-hero-actions height0 justifyStart padding5 borderRadius15" style="gap:25px;">
+            <a href="/rg" class="nav transparent liquid">Book Your Event Now!</a>
+            
+        </div>
+        <br><br>
+        <p class="size20">We’re a passionate group of musicians performing a mix of OPM, pop, rock, and soulful hits — guaranteed to make your event unforgettable</p>
+
+    </div>
+    <br>
+
+    <div class="banda-occasion height0 borderRadius20 gap10 justifyBetween alignEnd" style="z-index: 100;">
+        <img src="/images/c.png" alt="" class="width50 width0 borderRadius10">
+        <div class="height0 width50 col alignEnd paddingBlock10">
+            <p class="size40">Music for Every Occasion</p>
+            <p class="size16">Live acoustic, full band, or customized setup available!</p>
+            <br>
+            <hr class="width70">
+            <br>
+            <p class="size20 str400">Birthday &bull; Debut &bull; Wedding &bull; Reunion</p>
+            <p class="size20 str400">Anniversary &bull; Festival &bull; Corporate Event</p>
+            <p class="size20 str400">Baptism &bull; Charity Event &bull; Funeral</p>
+            <p class="size20 str400">Community Gathering & Many More</p>
+        </div>
+    </div>
+    <br>
+    
+    <div class="banda-gallery height0 gap10">
+        <img src="/images/s.png" alt="" class="width20 borderRadius10">
+        <img src="/images/w.png" alt="" class="width20 borderRadius10">
+        <img src="/images/b.png" alt="" class="width20 borderRadius10">
+        <img src="/images/d.png" alt="" class="width20 borderRadius10">
+        <img src="/images/f.png" alt="" class="width20 borderRadius10">
+    </div>
+    <br>
+
+    <div class="banda-footer height0 gap5 marginBlock20 glowImg2">© 2025 Banda ni Shaho | <a href="/lg" class="height0 width0 white">Admin Login</a></div>
+    
+</body>
+</html>

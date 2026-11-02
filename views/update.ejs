@@ -1,0 +1,263 @@
+<% layout('layout') %>
+<head>
+    <style>
+        #dd {
+            display: none !important;
+            opacity: 0 !important;
+        }
+.showPass {
+    position: absolute;
+    right: 10px;
+    bottom: 12px;
+    cursor: pointer;
+}
+        .disabled-link {
+            opacity: 0.5;
+            pointer-events: none; /* disables the click */
+            cursor: not-allowed;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+  <div id="app">
+
+    <div class="absolute top0 left0 bgModal padding30 index60" id="updateCard">
+
+      <div class="height0 padding30 width35 borderRadius15 relative bgWhite"  id="updateFormCard">
+        <a href="javascript:history.back()" class="nav cnav absolute top10 right10 index50" id="updateX"><i class="fas fa-xmark"></i></a>
+
+        <form @submit.prevent="updateProfile" class="padding5 gap10">
+          <input type="hidden" name="id" value="<%= user._id %>">
+
+          <div class="field">
+            <p class="size30 str500">Update Details</p>
+          </div>
+
+          <div class="height0 gap10">
+            <div class="field">
+              <label>First Name</label>
+              <input type="text" v-model="firstName" @input="sanitizeField('firstName')" required>
+            </div>
+            <div class="field">
+              <label>Middle Name</label>
+              <input type="text" v-model="middleName" @input="sanitizeField('middleName')">
+            </div>
+          </div>
+
+          <div class="height0 gap10">
+            <div class="field">
+              <label>Last Name</label>
+              <input type="text" v-model="lastName" @input="sanitizeField('lastName')" required>
+            </div>
+            <div class="field">
+              <label>Ext Name</label>
+              <input type="text" v-model="extName" @input="sanitizeField('extName')">
+            </div>
+          </div>
+          
+          <div class="field">
+              <label>Email</label>
+              <input type="text" v-model="email" @blur="validateEmail" required>
+          </div>
+
+          <div class="field">
+              <label>Phone</label>
+              <input type="text" v-model="phone" @input="validatePhone" required>
+          </div>
+
+          <div class="field">
+              <label>Address</label>
+              <input type="text" v-model="address" @input="sanitizeField('address')" required>
+          </div>
+          
+          <div class="field">
+              <label>Username</label>
+              <input type="text" v-model="newUsername" @input="validateUsername" required>
+          </div>
+
+          <div class="field password">
+              <label>Current Password</label>
+              <input :type="showPassword ? 'text' : 'password'" v-model="password" required>
+                        <span class="showPass faded"
+                            @click="showPassword = !showPassword">
+                            {{ showPassword ? 'hide' : 'show' }}
+                        </span>
+          </div>
+
+          <p v-if="emailError" style="color:red">{{ emailError }}</p>
+          <p v-if="errorMessage" style="color:red">{{ errorMessage }}</p>
+
+          <div class="height0 justifyEnd padding5">
+            <button type="submit" :disabled="invalidEmail" class="nav pnav">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      
+      <div class="height0 padding40 width25 borderRadius20 relative bgWhite col hidden" id="successCard">
+        <i class="fas fa-check-circle green size80"></i>
+        <br>
+        <p class="size20 str500 textCenter">You updated your information successfully!</p>
+        <br>
+        <div class="height0 justifyEnd padding5 gap10">
+          <button class="nav border0 width100" onclick="location.href='/dsb'">Got It!</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+<!-- Old 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form[action='/update']");
+  const successCard = document.getElementById("successCard");
+  const updateCard = document.getElementById("updateFormCard");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch("/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        updateCard.classList.add("hidden");
+        successCard.classList.remove("hidden");
+      } else {
+        alert(result.message || "Update failed!");
+      }
+
+    } catch (err) {
+      console.error("❌ Error:", err);
+      alert("An error occurred while updating.");
+    }
+  });
+});
+</script>
+-->
+
+
+<!-- Vue scripts -->
+
+<script>
+  
+  const app = Vue.createApp({
+      data() {
+          return {
+              profile: {},
+              errorMessage: '',
+              firstName: '',
+              middleName: '',
+              lastName: '',
+              extName: '',
+              email: '',
+              emailError: '',
+              invalidEmail: false,
+              phone: '',
+              address: '',
+              newUsername: '',
+              password: '',
+              showPassword: false,
+          }
+      },
+
+      methods: {
+
+            sanitizeField(field) {
+                this[field] = this[field].replace(/[^\p{L}\p{N}'\- ]/gu, '');
+            },
+
+            validateUsername() {
+              this.newUsername = this.newUsername.replace(/[^\p{L}\p{N}_]/gu, '');
+            },
+
+            validatePhone() {
+                this.phone = this.phone.replace(/[^0-9]/g, '').slice(0, 11);
+            },
+
+            validateEmail() {
+                const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                if (!pattern.test(this.email)) {
+                    this.emailError = "Invalid email format";
+                    this.invalidEmail = true
+                } else {
+                    this.emailError = '';
+                    this.invalidEmail = false
+                }
+            },
+
+        async updateProfile() {
+                    try {
+                        const res = await fetch('/update', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                firstName: this.firstName,
+                                middleName: this.middleName,
+                                lastName: this.lastName,
+                                extName: this.extName,
+                                email: this.email,
+                                phone: this.phone,
+                                address: this.address,
+                                currentUsername: this.profile.username,
+                                username: this.newUsername,
+                                password: this.password
+                            })
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            this.errorMessage = data.error;
+                            return;
+                        }
+
+                        window.location.href = data.redirectPath;
+
+                    } catch (err) {
+                        this.errorMessage = "An error occurred.";
+                        console.log(err);
+                    }
+        }
+      },
+
+      async mounted() {
+          try {
+              const res = await fetch('/api/prf');  // fetch JSON from backend
+              const data = await res.json();
+              this.profile = data.user;             // now profile.email exists
+              this.firstName = this.profile.firstName;
+              this.middleName = this.profile.middleName;
+              this.lastName = this.profile.lastName;
+              this.extName = this.profile.extName;
+              this.email = this.profile.email;
+              this.phone = this.profile.phone;
+              this.address = this.profile.address;
+              this.newUsername = this.profile.username;
+          } catch (err) {
+              console.error('Failed to fetch profile', err);
+          }
+      }
+  });
+
+  app.mount('#app');
+
+</script>
+
+</body>

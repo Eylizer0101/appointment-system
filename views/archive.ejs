@@ -1,0 +1,583 @@
+<% layout('layout') %>
+<body>
+
+<div id="archiveApp" class="col justifyStart paddingInline20 gap5">
+
+  <div class="height0 justifyBetween padding5">
+    <a href="/app" class="nav"><i class="fas fa-chevron-left"></i>Go Back</a>
+    <p class="size30 str400">Archived Appointments</p>
+    <div class="width0 justifyEnd gap10 padding5">
+      <div class="searchBar">
+        <input type="search" id="univ" v-model="searchQuery" placeholder="Search...">
+        <i class="fas fa-search"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="height75 bgSoft borderRadius10 overflow-y1 alignStart padding5 justifyEnd relative">
+    <div class="height0 borderRadius10 padding10 col width28 fixed bgWhite darkShadow hidden" style="top: 22%; left: 30px;">
+      <div class="height0 justifyBetween">
+        <button class="nav bgWhite border0 borderRadius10" @click="prevMonth"><i class="fas fa-chevron-left"></i> Prev</button>
+        <span id="monthYear" class="width0 size20 str500">{{ monthNames[currentMonth] }} {{ currentYear }}</span>
+        <button class="nav bgWhite border0 borderRadius10" @click="nextMonth">Next <i class="fas fa-chevron-right marginLeft5"></i></button>
+      </div>
+      <div id="calendar" class="padding10" v-html="calendarHtml"></div>
+    </div>
+
+    <div class="section tableCard padding0 shadowNone">
+      <p class="p14" id="noRecords" v-if="filteredAppointments.length === 0">No Records</p>
+
+      <table id="dirTable" class="padding5 shadowNone" v-if="filteredAppointments.length > 0">
+        <thead>
+          <tr>
+            <th style="width: 5%; text-align: center;">#</th>
+            <th style="width: 30%;">Client's Name</th>
+            <th style="width: 10%;">Package</th>
+            <th style="width: 10%;">Start Date</th>
+            <th style="width: 10%;">End Date</th>
+            <th style="width: 20%;">Status</th>
+            <th style="width: 15%; text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(a, index) in paginatedAppointments" :key="a._id">
+            <td class="textCenter">{{ (currentPage - 1) * rowsPerPage + index + 1 }}</td>
+            <td>{{ a.bookBy }}<br>{{ a.barangay }}, {{ a.city }}, {{ a.province }}</td>
+            <td>{{ a.package }}</td>
+            <td>{{ formatFullDate(a.startAt) }}</td>
+            <td>{{ formatFullDate(a.endAt) }}</td>
+            <td>
+              <p :class="statusBadgeClass(a.status)" class="white padding5 borderRadius5 inline" style="width: fit-content !important;">{{ a.status }}</p>
+              &nbsp;
+              <p v-if="a.status === 'Success'" :class="payBadgeClass(a.pay)" class="white padding5 borderRadius5 inline" style="width: fit-content !important;"><i class="fas fa-coins inline"></i> {{ a.pay }}</p>
+            </td>
+            <td class="tdCtrl">
+              <a :href="`/view2/${a._id}`" class="nav"><i class="fas fa-eye"></i> View Details</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- Server data injected for Vue -->
+    <script>
+      const initialApt = <%- JSON.stringify(apt || []) %>;
+      const initialBookedDates = <%- JSON.stringify(bookedDates || []) %>;
+      const serverMessage = <%- JSON.stringify(message || '') %>;
+    </script>
+
+  </div>
+
+  <div class="sub height10 row flex">
+    <div class="ctrl left height0 width50">
+      <span id="totalRecords" class="totalRecords green">{{ filteredAppointments.length }} Total Records</span>
+    </div>
+    <div class="ctrl right height0 width50">
+      <p>Display Per Page:</p>
+      <div class="selectBar" style="width: 70px;">
+        <select id="rowsPerPage" v-model.number="rowsPerPage" @change="changeRowsPerPage" style="width: 100px">
+          <option value="8">8</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option :value="999999999">All</option>
+        </select>
+      </div>
+      <div class="pagination" id="pagination">
+        <button v-if="totalPages > 1" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">« Previous</button>
+
+        <button v-for="p in paginationPages" :key="p.key" :disabled="p.isEllipsis" :class="{ active: p.page === currentPage }" @click="p.isEllipsis ? null : changePage(p.page)">
+          {{ p.display }}
+        </button>
+
+        <button v-if="totalPages > 1" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">Next »</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New booking modal (kept as in original) -->
+  <div class="absolute top0 left0 bgModal overflow-y1 alignStart padding30 index60 hidden" :class="{ hidden: !showNewCard }" id="newCard" v-show="showNewCard">
+    <div class="height0 padding30 width35 borderRadius15 relative bgWhite">
+      <a href="javascript:void(0)" class="nav cnav absolute top10 right10 index50" @click="closeNewCard"><i class="fas fa-xmark"></i></a>
+      <form @submit.prevent="submitNewBooking" class="padding5 gap10">
+        <div class="field">
+          <p class="size30 str500">New Booking</p>
+        </div>
+        <br>
+
+        <div class="field">
+          <p class="size14 str400 gray"><i class="fas fa-user inline marginRight5"></i>Client or Contact Person</p>
+          <hr>
+        </div>
+
+        <div class="field">
+          <label>Complete Name</label>
+          <input type="text" v-model="newBooking.bookBy" required>
+        </div>
+        <br>
+
+        <div class="field">
+          <p class="size14 str400 gray"><i class="fas fa-house inline marginRight5"></i>Location Info</p>
+          <hr>
+        </div>
+
+        <div class="field">
+          <label>House No. & Purok</label>
+          <input type="text" v-model="newBooking.purok" placeholder="e.g. 034 Purok 2" required>
+        </div>
+
+        <div class="height0 gap10">
+          <div class="field">
+            <label>Barangay</label>
+            <input type="text" v-model="newBooking.barangay" placeholder="e.g. Aduas" required>
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input type="text" v-model="newBooking.city" placeholder="e.g. Cabanatuan City" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Province</label>
+          <input type="text" v-model="newBooking.province" placeholder="e.g. Nueva Ecija" required>
+        </div>
+
+        <div class="field">
+          <label>Landmark</label>
+          <input type="text" v-model="newBooking.landmark" placeholder="e.g. In Front of Petrol Gasoline Station" required>
+        </div>
+        <br>
+
+        <div class="field">
+          <p class="size14 str400 gray"><i class="fas fa-address-book inline marginRight5"></i>Contact Info</p>
+          <hr>
+        </div>
+
+        <div class="height0 gap10">
+          <div class="field">
+            <label>Phone</label>
+            <input type="text" v-model="newBooking.phone" placeholder="e.g. 09238977890" maxlength="11" required @input="newBooking.phone = newBooking.phone.replace(/[^0-9]/g, '').slice(0,11)">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" v-model="newBooking.email" placeholder="e.g. jake@gmail.com" required>
+          </div>
+        </div>
+
+        <br>
+
+        <div class="field">
+          <p class="size14 str400 gray"><i class="fas fa-calendar inline marginRight5"></i>Appointment Info</p>
+          <hr>
+        </div>
+
+        <div class="field">
+          <label>Package</label>
+          <div class="selectBar">
+            <select name="package" v-model="newBooking.package" required>
+              <option value="" disabled selected>--Select Package--</option>
+              <option value="Basic">Basic Package</option>
+              <option value="Standard">Standard Package</option>
+              <option value="Premium">Premium Package</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="height0 gap5">
+          <div class="field">
+            <label>Start At</label>
+            <input type="date" v-model="newBooking.startAt" required @change="checkConflictAdmin">
+          </div>
+          <div class="field">
+            <label>End At</label>
+            <input type="date" v-model="newBooking.endAt" required @change="checkConflictAdmin">
+          </div>
+        </div>
+
+        <div id="dateWarning" class="height0 padding10 borderRadius10" v-show="adminConflicts.length" style="background-color: rgb(255, 245, 245); color: rgb(155, 0, 0);">
+          <p class="size12"> <i class="fas fa-exclamation-circle inline"></i> The following dates are already booked: {{ formattedAdminConflicts }}</p>
+        </div>
+
+        <div class="height0 justifyEnd padding5">
+          <button type="submit" class="nav pnav" :disabled="adminConflicts.length > 0">Book Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <% if (message && message.length > 0) { %>
+  <div class="absolute top0 left0 bgModal padding30 index60" id="successCard">
+    <div class="height0 padding30 width30 borderRadius15 relative bgWhite col gap5">
+      <div class="h95 w98 relative borderRadius500 borderGray">
+        <i class="fas fa-bell size60 black h65 w65 absolute right10 bottom10" style="transform: rotate(-20deg);"></i>
+        <i class="fas fa-heart size20 yellow h20 w20 absolute left10 bottom20" style="transform: rotate(10deg);"></i>
+        <i class="fas fa-star size22 yellow h25 w25 absolute left5 bottom45" style="transform: rotate(-15deg);"></i>
+      </div>
+      <p class="size40 str500">Notification</p>
+      <p class="size14 str400 textCenter"><%= message %></p>
+      <br>
+      <a href="javascript:void(0)" class="nav index50 border0 width50" id="successX">Got it!</a>
+    </div>
+  </div>
+  <% } %>
+
+</div>
+
+<!-- Vue via CDN (consistent with rg.ejs & app.ejs) -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      appointments: initialApt || [],
+      bookedDates: initialBookedDates || [],
+      currentYear: new Date().getFullYear(),
+      currentMonth: new Date().getMonth(),
+      calendarHtml: '',
+      monthNames: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+      searchQuery: '',
+      rowsPerPage: 8,
+      currentPage: 1,
+      showNewCard: false,
+      newBooking: {
+        bookBy: '',
+        purok: '',
+        barangay: '',
+        city: '',
+        province: '',
+        landmark: '',
+        phone: '',
+        email: '',
+        event: '',
+        otherEvent: '',
+        package: '',
+        startAt: '',
+        endAt: ''
+      },
+      events: [
+        'Birthday','Debut','Wedding','Baptism','Anniversary',
+        'Funeral','Corporate Event','Reunion','Festival',
+        'Charity Event','Community Gathering','Others'
+      ],
+      adminConflicts: [],
+      serverMessage: serverMessage || '',
+      showClientSuccess: false
+    };
+  },
+  computed: {
+    // Improved search: tokens, exact pay/status matching, date formats (fixes paid/unpaid and Dec 1 issues)
+    filteredAppointments() {
+      const raw = (this.searchQuery || '').toLowerCase().trim();
+      if (!raw) return this.appointments;
+      const tokens = raw.split(/\s+/).filter(Boolean);
+
+      return this.appointments.filter(a => {
+        const status = (a.status || '').toLowerCase();
+        const pay = (a.pay || '').toLowerCase();
+        const isoStart = a.startAt || '';
+        const isoEnd = a.endAt || '';
+        const fullStart = a.startAt ? this.formatDate(a.startAt).toLowerCase() : '';
+        const fullEnd = a.endAt ? this.formatDate(a.endAt).toLowerCase() : '';
+        const shortStart = a.startAt ? new Date(a.startAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase() : '';
+        const shortEnd = a.endAt ? new Date(a.endAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase() : '';
+        const numsStart = a.startAt ? new Date(a.startAt).toISOString().split('T')[0] : '';
+        const numsEnd = a.endAt ? new Date(a.endAt).toISOString().split('T')[0] : '';
+
+        const combined = [
+          a.bookBy, a.package, a.event, a.city, a.barangay, a.province,
+          status, pay,
+          isoStart, isoEnd, fullStart, fullEnd, shortStart, shortEnd, numsStart, numsEnd
+        ].join(' ').toLowerCase();
+
+        return tokens.every(t => {
+          // Exact pay match for tokens 'paid'/'unpaid'
+          if (t === 'paid' || t === 'unpaid') return pay === t;
+
+          // Exact status matches
+          if (['pending','success','cancelled','cancel','completed'].includes(t)) {
+            const norm = t === 'cancel' ? 'cancelled' : t;
+            return status === norm;
+          }
+
+          // ISO date e.g. 2026-12-01
+          if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+            if (numsStart === t || numsEnd === t) return true;
+            return combined.includes(t);
+          }
+
+          // Month token (e.g., 'dec' or 'december') check against short/full date strings
+          if (/^[a-z]{3,9}$/.test(t)) {
+            if (shortStart.includes(t) || shortEnd.includes(t) || fullStart.includes(t) || fullEnd.includes(t)) return true;
+          }
+
+          // Day token like '1' or '01' => match day portion in short/full dates
+          if (/^\d{1,2}$/.test(t)) {
+            const dayToken = t.replace(/^0+/, '');
+            if (shortStart.includes(` ${dayToken}`) || shortEnd.includes(` ${dayToken}`) ||
+                fullStart.includes(` ${dayToken}`) || fullEnd.includes(` ${dayToken}`)) return true;
+          }
+
+          // fallback substring match against combined fields
+          return combined.includes(t);
+        });
+      });
+    },
+
+    paginatedAppointments() {
+      if (this.rowsPerPage >= 999999999) return this.filteredAppointments;
+      const start = (this.currentPage - 1) * this.rowsPerPage;
+      return this.filteredAppointments.slice(start, start + this.rowsPerPage);
+    },
+
+    totalPages() {
+      return Math.max(1, Math.ceil(this.filteredAppointments.length / this.rowsPerPage));
+    },
+
+    // Pagination shows neighbors around current page (fixes previous bug)
+    paginationPages() {
+      const pages = [];
+      const total = this.totalPages;
+
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push({ key: i, page: i, display: i, isEllipsis: false });
+        return pages;
+      }
+
+      pages.push({ key: 1, page: 1, display: 1, isEllipsis: false });
+      pages.push({ key: 2, page: 2, display: 2, isEllipsis: false });
+
+      const start = Math.max(3, this.currentPage - 1);
+      const end = Math.min(total - 2, this.currentPage + 1);
+
+      if (start > 3) pages.push({ key: 'e1', page: null, display: '...', isEllipsis: true });
+
+      for (let p = start; p <= end; p++) {
+        pages.push({ key: p, page: p, display: p, isEllipsis: false });
+      }
+
+      if (end < total - 2) pages.push({ key: 'e2', page: null, display: '...', isEllipsis: true });
+
+      pages.push({ key: total - 1, page: total - 1, display: total - 1, isEllipsis: false });
+      pages.push({ key: total, page: total, display: total, isEllipsis: false });
+
+      const seen = new Set();
+      const cleaned = [];
+      for (const p of pages) {
+        const sig = p.isEllipsis ? `e-${p.display}-${p.key}` : `p-${p.page}`;
+        if (!seen.has(sig)) {
+          cleaned.push(p);
+          seen.add(sig);
+        }
+      }
+      return cleaned;
+    },
+
+    formattedAdminConflicts() {
+      return this.adminConflicts.map(c => `${this.formatDate(c.startAt)} - ${this.formatDate(c.endAt)}`).join(', ');
+    }
+  },
+  methods: {
+    generateCalendar() {
+      const year = this.currentYear;
+      const month = this.currentMonth;
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      let html = "<table>";
+      html += "<tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr><tr>";
+      for (let i = 0; i < firstDay.getDay(); i++) html += "<td></td>";
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const appointment = this.bookedDates.find(a => a.date === dateStr);
+        const isBooked = !!appointment;
+        const isPaid = appointment?.pay === "Paid";
+
+        html += `<td style="
+          background:${isBooked ? (isPaid ? '#f97316' : 'rgba(210,210,210)') : 'white'}; 
+          color:${isBooked ? (isPaid ? 'white' : 'black') : '#000'};
+          border:1px solid #ddd;
+          width:60px;
+          height:60px;
+          text-align:center;
+          vertical-align:middle;
+          border-radius:8px;
+        ">${day}${isPaid ? ` <i class='fas fa-check-circle inline' style='color:white;'></i>` : ''}</td>`;
+
+        if (new Date(year, month, day).getDay() === 6 && day < daysInMonth) html += "</tr><tr>";
+      }
+
+      html += "</tr></table>";
+      this.calendarHtml = html;
+    },
+    prevMonth() {
+      this.currentMonth--;
+      if (this.currentMonth < 0) {
+        this.currentMonth = 11;
+        this.currentYear--;
+      }
+      this.generateCalendar();
+    },
+    nextMonth() {
+      this.currentMonth++;
+      if (this.currentMonth > 11) {
+        this.currentMonth = 0;
+        this.currentYear++;
+      }
+      this.generateCalendar();
+    },
+    changePage(p) {
+      if (typeof p !== 'number') return;
+      if (p < 1) p = 1;
+      if (p > this.totalPages) p = this.totalPages;
+      this.currentPage = p;
+    },
+    changeRowsPerPage() {
+      this.currentPage = 1;
+    },
+    statusBadgeClass(status) {
+      if (status === 'Pending') return 'bgYellow';
+      if (status === 'Success') return 'bgGreen';
+      if (status === 'Cancelled') return 'bgRed';
+      return 'bgGray';
+    },
+    payBadgeClass(pay) {
+      return pay === 'Paid' ? 'bgGreen' : 'bgGray';
+    },
+    formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    },
+    formatFullDate(dateStr) {
+      if (!dateStr) return '';
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+    },
+    openNewCard() {
+      this.showNewCard = true;
+    },
+    closeNewCard() {
+      this.showNewCard = false;
+      this.resetNewBooking();
+      this.adminConflicts = [];
+    },
+    checkConflictAdmin() {
+      this.adminConflicts = [];
+      if (!this.newBooking.startAt || !this.newBooking.endAt) return;
+      const start = new Date(this.newBooking.startAt);
+      const end = new Date(this.newBooking.endAt);
+      this.adminConflicts = (this.appointments || []).filter(b => {
+        const bStart = new Date(b.startAt);
+        const bEnd = new Date(b.endAt);
+        return (bStart <= end && bEnd >= start);
+      });
+    },
+    async submitNewBooking() {
+      this.checkConflictAdmin();
+      if (this.adminConflicts.length) return alert('Selected dates conflict with existing bookings.');
+
+      try {
+        const payload = { ...this.newBooking };
+        // If server expects form POST instead of JSON, you can change this later.
+        const res = await fetch('/new-book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && (data.success || data.insertedId)) {
+          if (data.appointment) {
+            this.appointments.unshift(data.appointment);
+          } else {
+            const created = {
+              _id: data.insertedId || ('tmp_' + Date.now()),
+              bookBy: payload.bookBy,
+              purok: payload.purok,
+              barangay: payload.barangay,
+              city: payload.city,
+              province: payload.province,
+              landmark: payload.landmark,
+              phone: payload.phone,
+              email: payload.email,
+              event: payload.event,
+              package: payload.package,
+              startAt: payload.startAt,
+              endAt: payload.endAt,
+              status: data.status || 'Pending',
+              pay: data.pay || 'Unpaid'
+            };
+            this.appointments.unshift(created);
+          }
+
+          if (data.bookedDates) {
+            this.bookedDates = data.bookedDates;
+          } else {
+            const s = new Date(payload.startAt);
+            const e = new Date(payload.endAt);
+            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+              const ds = new Date(d).toISOString().split('T')[0];
+              if (!this.bookedDates.find(x => x.date === ds)) {
+                this.bookedDates.push({ date: ds, pay: 'Unpaid' });
+              }
+            }
+          }
+
+          this.generateCalendar();
+          this.showClientSuccess = true;
+          setTimeout(() => this.showClientSuccess = false, 4000);
+          this.closeNewCard();
+        } else {
+          alert(data.message || 'Booking failed');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Booking failed (network error).');
+      }
+    },
+    resetNewBooking() {
+      for (const k in this.newBooking) this.newBooking[k] = '';
+    }
+  },
+  mounted() {
+    this.generateCalendar();
+  },
+  watch: {
+    bookedDates: {
+      handler() {
+        this.generateCalendar();
+      },
+      deep: true
+    },
+    searchQuery() {
+      this.currentPage = 1;
+    }
+  }
+}).mount('#archiveApp');
+</script>
+
+<!-- keep existing success-card auto-hide JS behavior for server-side message -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const successCard = document.getElementById("successCard");
+  const successX = document.getElementById("successX");
+
+  if (successCard && successX) {
+    successX.addEventListener("click", () => {
+      successCard.style.opacity = "0";
+      setTimeout(() => successCard.remove(), 300);
+    });
+
+    setTimeout(() => {
+      successCard.style.opacity = "0";
+      setTimeout(() => successCard.remove(), 300);
+    }, 4000);
+  }
+});
+</script>
+
+</body>

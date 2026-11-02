@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banda ni Shaho</title>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/responsive.css">
+    <link rel="icon" href="/images/logo.png">
+
+    <style>
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body id="app" class="banda-booking abstractBG justifyEnd padding50 relative overflow-y1 alignStart gap20" style="padding-inline: 10%;">
+    
+
+    <% if (message && message.length > 0) { %>
+    <div class="absolute top0 left0 bgModal padding30 index60" id="successCard">
+        <div class="height0 padding30 width30 borderRadius15 relative bgWhite col gap5">
+        <div class="h95 w98 relative borderRadius500 borderGray">
+            <i class="fas fa-bell size60 black h65 w65 absolute right10 bottom10" style="transform: rotate(-20deg);"></i>
+            <i class="fas fa-heart size20 yellow h20 w20 absolute left10 bottom20" style="transform: rotate(10deg);"></i>
+            <i class="fas fa-star size22 yellow h25 w25 absolute left5 bottom45" style="transform: rotate(-15deg);"></i>
+        </div>
+        <p class="size40 str500">Great News!</p>
+        <p class="size14 str400 textCenter"><%= message %></p>
+        <br>
+        <a href="javascript:void(0)" class="nav index50 border0 width50" id="successX">Got it!</a>
+        </div>
+    </div>
+    <% } %>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const successCard = document.getElementById("successCard");
+        const successX = document.getElementById("successX");
+
+        if (successCard && successX) {
+        successX.addEventListener("click", () => {
+            successCard.style.opacity = "0";
+            setTimeout(() => successCard.remove(), 300);
+        });
+
+        setTimeout(() => {
+            successCard.style.opacity = "0";
+            setTimeout(() => successCard.remove(), 300);
+        }, 4000);
+        }
+    });
+    </script>
+    <div class="height0 absolute top10 right10 padding10 gap10 width0">
+    </div>
+    <video autoplay muted loop playsinline class="absolute top100 width70 borderPrimary borderRadius30 glowImg2" style="opacity: 0.05; left: 15%; z-index: 0;">
+        <source src="/images/video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <video autoplay muted loop playsinline class="absolute width16 borderRadius15 glowImg" style="display: none; opacity: 1; left: 7%; z-index: 5; top: 42%;">
+        <source src="/images/video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="height0 width65 absolute left10 top100 padding10">
+        <p class="size100 str400 absolute left100 top20 gradientText upperCase"> &nbsp; Banda &nbsp;</p>
+        <p class="size80 str400 absolute left100 top100 gradientText"> &nbsp;ni Shaho &nbsp;</p>
+        <img src="/images/gem.png" alt="" class="w500 glowImg2" style="transform: rotate(10deg); margin-top: 40px;">
+    </div>
+    
+    <a href="/" class="banda-back nav w100 transparent liquid"><i class="fas fa-chevron-left"></i>GO BACK</a>
+    <div class="banda-booking-shell height0 width50 bgWhite padding25 borderRadius15 darkShadow">
+        <form @submit.prevent="bookAppointment" class="padding5 gap10 height0">
+            <div class="field">
+                <p class="size30 str500">BOOK FORM</p>
+            </div>
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-user inline marginRight5"></i>Client or Contact Person</p>
+                <hr>
+            </div>
+
+            <div class="field">
+                <label>Complete Name</label>
+                <input type="text" v-model="name" @input="sanitizeField('name')" name="bookBy" required>
+            </div>
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-house inline marginRight5"></i>Location Info</p>
+                <hr>
+            </div>
+            
+            <div class="field">
+                <label>House No. & Purok</label>
+                <input type="text" v-model="purok" @input="sanitizeField('purok')" name="purok" placeholder="e.g. 034 Purok 2" required>
+            </div>
+
+            <div class="banda-form-pair height0 gap10">
+                <div class="field">
+                    <label>Barangay</label>
+                    <input type="text" v-model="barangay" @input="sanitizeField('barangay')" name="barangay" placeholder="e.g. Aduas" required>
+                </div>
+                <div class="field">
+                    <label>City</label>
+                    <input type="text" v-model="city" @input="sanitizeField('city')" name="city" placeholder="e.g. Cabanatuan City" required>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label>Province</label>
+                <input type="text" v-model="province" @input="sanitizeField('province')" name="province" placeholder="e.g. Nueva Ecija" required>
+            </div>
+            
+            <div class="field">
+                <label>Landmark</label>
+                <input type="text" v-model="landmark" @input="sanitizeField('landmark')" name="landmark" placeholder="e.g. In Front of Petrol Gasoline Station" required>
+            </div>
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-address-book inline marginRight5"></i>Contact Info</p>
+                <hr>
+            </div>
+
+            <div class="banda-form-pair height0 gap10">
+                <div class="field">
+                    <label>Phone</label>
+                    <input
+                        type="text"
+                        v-model="phone"
+                        @input="validatePhone"
+                        name="phone"
+                        placeholder="e.g. 09238977890"
+                        maxlength="11"
+                        required
+                        >
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" v-model="email" @blur="validateEmail()" name="email" placeholder="e.g. jake@gmail.com" required>
+                </div>
+            </div>
+
+            <p v-if="emailError" style="color:red">{{ emailError }}</p>
+
+            <br>
+
+            <div class="field">
+                <p class="size14 str400 gray"><i class="fas fa-calendar inline marginRight5"></i>Appointment Info</p>
+                <hr>
+            </div>
+            <div class="field">
+                <label>Type of Event</label>
+                <div class="selectBar">
+                    <select name="event" v-model="event" id="eventSelect" required>
+                        <option value="" disabled>--Select Event--</option>
+                        <option v-for="e in events" :key="e" :value="e">{{ e }}</option>
+                    </select>
+
+                </div>
+
+                <div v-if="event === 'Others'" style="margin-top:10px;">
+                    <label>Please specify:</label>
+                <input 
+                    type="text" 
+                    v-model="otherEvent" 
+                    :required="event === 'Others'" 
+                    @input="sanitizeField('otherEvent')"
+                    placeholder="Enter specific event type"
+                    >
+                </div>
+
+            </div>
+
+            <div class="field">
+                <label>Package</label>
+                <div class="selectBar">
+                    <select name="package" v-model="package" required>
+                        <option value="" disabled selected>--Select Package--</option>
+                        <option v-for="(label, code) in packages" :key="code" :value="code">{{ label }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="banda-form-pair height0 gap5">
+            <div class="field">
+                <label>Start At</label>
+                <input type="date" v-model="startAt" :min="minStartDate" @change="checkConflict" id="startAt" name="startAt" required>
+            </div>
+            <div class="field">
+                <label>End At</label>
+                <input type="date" v-model="endAt" :min="startAt" :disabled="!startAt" @change="checkConflict" id="endAt" name="endAt" required>
+            </div>
+            </div>
+
+            <div v-if="conflicts.length" class="warning">
+                <p class="size12" style="background-color: rgb(255, 245, 245); color: rgb(155, 0, 0);">
+                The following dates are already booked:
+                {{ formattedConflicts }}
+                </p>
+            </div>
+
+            <!-- <div id="dateWarning" class="height0 padding10 borderRadius10" style="display:none; background-color: rgb(255, 245, 245); color: rgb(155, 0, 0);"> </div>-->
+
+            <div class="height0 bgSoft borderRadius15 padding20 col textCenter">
+                Kindly make sure all details are correct before submitting your booking. This action can’t be undone once submitted
+            </div>
+
+            <div class="height0 justifyEnd padding5">
+                <button type="submit" class="nav pnav w100" :disabled="conflicts.length > 0 || invalidEmail">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Success dialog -->
+    <div 
+        v-if="showSuccess" 
+        id="successCard" 
+        class="absolute top0 left0 padding30 index60"
+        style="transition: opacity 0.3s; opacity: 1;"
+    >
+        <div class="height0 padding30 width30 borderRadius15 relative bgWhite col gap5 darkShadow">
+        <div class="h95 w98 relative borderRadius500 borderGray">
+            <i class="fas fa-thumbs-up size60 green h65 w65 absolute right10 bottom10" style="transform: rotate(-20deg);"></i>
+            <i class="fas fa-heart size20 yellow h20 w20 absolute left10 bottom20" style="transform: rotate(10deg);"></i>
+            <i class="fas fa-star size22 yellow h25 w25 absolute left5 bottom45" style="transform: rotate(-15deg);"></i>
+        </div>
+        <p class="size36 str500 colorPrimary textCenter">Booking Successful!</p>
+        <p class="size14 str400 textCenter colorPrimary">
+            Thank you for booking with Banda ni Shaho! We’ll reach out to you soon through your registered email or contact number to schedule a meeting and discuss your event details.
+        </p>
+        <br>
+        <a href="javascript:void(0)" @click="closeSuccess" class="nav index50 border0 width50">Got it!</a>
+        </div>
+    </div>
+
+<!-- Vue scripts -->
+<script>
+
+    const app = Vue.createApp({
+
+        data() {
+            return {
+                showSuccess: false,
+
+                name: '',
+                purok: '',
+                barangay: '',
+                city: '',
+                province: '',
+                landmark: '',
+                phone: '',
+                email: '',
+                emailError: '',
+                invalidEmail: false,
+
+                event: '',
+                otherEvent: '',
+                events: [
+                    'Birthday','Debut','Wedding','Baptism','Anniversary',
+                    'Funeral','Corporate Event','Reunion','Festival',
+                    'Charity Event','Community Gathering','Others'
+                ],
+
+                package: '',
+                packages: {
+                    Basic: 'Basic Package',
+                    Standard: 'Standard Package',
+                    Premium: 'Premium Package'
+                },
+                
+                startAt: '',
+                endAt: '',
+                booked: [],
+                conflicts: [],
+            }
+        },
+
+        methods: {
+            sanitizeField(field) {
+                this[field] = this[field].replace(/[^\p{L}\p{N}'\- ]/gu, '');
+            },
+
+            validatePhone() {
+                this.phone = this.phone.replace(/[^0-9]/g, '').slice(0, 11);
+            },
+
+            validateEmail() {
+                const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                if (!pattern.test(this.email)) {
+                    this.emailError = "Invalid email format";
+                    this.invalidEmail = true
+                } else {
+                    this.emailError = '';
+                    this.invalidEmail = false
+                }
+            },
+
+            formatDate(dateStr) {
+                return new Date(dateStr)
+                    .toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+            },
+
+            checkConflict() {
+                if (!this.startAt || !this.endAt) {
+                    this.conflicts = [];
+                    return;
+                }
+
+                const start = new Date(this.startAt);
+                const end = new Date(this.endAt);
+
+                this.conflicts = this.booked.filter(b => {
+                    const bStart = new Date(b.startAt);
+                    const bEnd = new Date(b.endAt);
+                    return (bStart <= end && bEnd >= start);
+                });
+            },
+
+            async bookAppointment() {
+                try {
+                    const res = await fetch('/new-book2', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            bookBy: this.name,
+                            package: this.package,
+                            startAt: this.startAt,
+                            endAt: this.endAt,
+                            purok: this.purok,
+                            barangay: this.barangay,
+                            city: this.city,
+                            province: this.province,
+                            landmark: this.landmark,
+                            phone: this.phone,
+                            email: this.email,
+                            event: this.event,
+                            otherEvent: this.event === 'Others' ? this.otherEvent : null
+                        })
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok && data.success) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        this.showSuccess = true;
+                        setTimeout(() => this.showSuccess = false, 4000); // auto-hide after 4s
+                        this.resetForm();
+                    } else {
+                        alert(data.message || 'Booking failed');
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                }
+            },
+
+            closeSuccess() {
+                this.showSuccess = false;
+            },
+
+            resetForm() {
+                this.name = '';
+                this.package = '';
+                this.startAt = '';
+                this.endAt = '';
+                this.purok = '';
+                this.barangay = '';
+                this.city = '';
+                this.province = '';
+                this.landmark = '';
+                this.phone = '';
+                this.email = '';
+                this.event = '';
+                this.otherEvent = '';
+            },
+
+        },
+
+        async mounted() {
+            try {
+                const res = await fetch('/booked-dates');
+                this.booked = await res.json();
+            } catch (err) {
+                console.error('Error fetching booked dates:', err);
+            }
+        },
+
+        computed: {
+            formattedConflicts() {
+                return this.conflicts
+                    .map(c => `${this.formatDate(c.startAt)} - ${this.formatDate(c.endAt)}`)
+                    .join(', ');
+            },
+
+            minStartDate() {
+                const now = new Date();
+                now.setDate(now.getDate() + 2);
+                const tzDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+                return tzDate.toISOString().split('T')[0];
+            },
+        },
+
+        watch: {
+            startAt(newVal) {
+                if (!newVal) {
+                    this.endAt = '';
+                } else if (this.endAt && this.endAt < newVal) {
+                    this.endAt = '';
+                }
+            }
+        },
+
+    })
+
+    app.mount('#app')
+
+</script>
+    
+</body>
+</html>

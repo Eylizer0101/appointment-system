@@ -1,0 +1,407 @@
+<% layout('layout') %>
+<head>
+  <style>
+    #mf { overflow-y: auto; display: block; }
+    canvas { padding: 5px; }
+    li {
+      font-size: 16px;
+      b {
+        font-weight: 700 !important;
+        font-size: 16px;
+      }
+    }
+    .card {
+      position: relative;
+      transition: all 0.6s ease-in-out;
+    }
+    .tCard .card:not(#tt):hover {
+      transform: scale(1.02);
+      i {
+        color: orange !important;
+      }
+    }
+    .tCard .card:not(#tt):hover p {
+      color: orange;
+    }
+    .tCard .card#tt:hover {
+      transform: scale(1.02);
+      opacity: 0.8 !important;
+    }
+  </style>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+</head>
+
+<body>
+  <div id="app" class="col padding20 height0 alignStart justifyStart gap0 bgSoft borderRadius10">
+
+    <div class="col gap20 height0">
+        <div class="height0 justifyBetween">
+            <p class="size40 str400 colorPrimary">Dashboard</p>
+            <div class="width60 justifyEnd gap10 padding5">
+              <div class="selectBar">
+                <i class="fas fa-filter orange w15"></i>
+                <select v-model="filter" class="">
+                  <!-- <option value="today">Today</option> -->
+                  <option value="thisweek">This Week</option>
+                  <option value="thismonth">This Month</option>
+                  <option value="thisyear" selected>This Year</option>
+                  <!-- <option value="date">Specific Date</option> -->
+                  <option value="daterange">Date Range</option>
+                </select>
+              </div>
+              <input type="date" v-if="filter === 'date'" v-model="date">
+              <input type="date" v-if="filter === 'daterange'" v-model="start">
+              <input type="date" v-if="filter === 'daterange'" v-model="end">
+                <a href="javascript:void(0)" class="nav pnav borderRadius10" id="reportBtn"><i class="fas fa-download"></i>Export Report</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="height0 padding10 gap20 tCard">
+      <div class="card padding20 col alignStart height0 darkShadow abstractBG bgShade4" id="tt">
+          <div class="height0 gap10 width0">
+          <i class="fas fa-cubes size20"></i><p class="size26 str500 white">{{ totals.total || 0 }}</p>
+          </div>
+          <p class="size24 str500">Total Records</p>
+      </div>
+      <div class="card col padding20 alignStart height0 darkShadow">
+        <div class="height0 gap5 width0"><p class="size30 str500 colorPrimary">{{ totals.pending || 0 }}</p><p class="bgTint9 orange padding5 borderRadius10">{{ percent(totals.percentPending) }}</p></div>
+        <p class="size18 str400 orange"><i class="fas fa-hourglass inline marginRight5 size16 orange"></i>Pending</p>
+      </div>
+      <div class="card col padding20 alignStart height0 darkShadow">
+        <div class="height0 gap5 width0"><p class="size30 str500 colorPrimary">{{ totals.success || 0 }}</p><p class="bgTint9  orange padding5 borderRadius10">{{ percent(totals.percentSuccess) }}</p></div>
+        <p class="size18 str400 green"><i class="fas fa-check-circle inline marginRight5 size16 green"></i>Success</p>
+      </div>
+      <div class="card col padding20 alignStart height0 darkShadow">
+        <div class="height0 gap5 width0"><p class="size30 str500 colorPrimary">{{ totals.cancelled || 0 }}</p><p class="bgTint9 orange padding5 borderRadius10">{{ percent(totals.percentCancelled) }}</p></div>
+        <p class="size18 str400 red"><i class="fas fa-xmark-circle inline marginRight5 size16 red"></i>Cancelled</p>
+      </div>
+      <div class="card col padding20 alignStart height0 darkShadow">
+        <div class="height0 gap5 width0"><p class="size30 str500 colorPrimary">{{ totals.totalUnpaid || 0 }}</p><p class="bgTint9 orange padding5  orangeborderRadius10">{{ percent(totals.percentUnpaid) }}</p></div>
+        <p class="size18 str400 gray"><i class="fas fa-coins inline marginRight5 size16 gray"></i>Unpaid</p>
+      </div>
+    </div>
+
+    <div class="height0 justifyStart paddingInline10"></div>
+
+    <div class="height0 padding10 gap10">
+          <div class="h350 padding20 bgWhite borderRadius15 width80 darkShadow relative">
+            <p class="size26 str400 textCenter absolute left20 top20 colorPrimary">Total Revenue</p>
+            <canvas id="earningsChart" class="width70 marginTop30"></canvas>
+          </div>
+          <div class="width20 h350 col gap10 abstractBG bgShade5 borderRadius15 darkShadow padding30 justifyStart alignStart">
+            <div class="height0 justifyStart alignStart col">
+              <p class="size26 str400 textLeft">Overview</p>
+              <hr>
+            </div>
+            <br>
+            <ul class="size14">
+              <li>Avg Lead Time:</li>
+              <li><b>{{ avgLeadDays || 0 }}</b> days</li>
+              <br>
+              <li>Avg Duration:</li>
+              <li><b>{{ avgDurationDays || 0 }}</b> days</li>
+              <br>
+              <li>Total Booked Days:</li>
+              <li><b>{{ totalBookedDays || 0 }}</b></li>
+              <br>
+              <li>Utilization:</li>
+              <li><b>{{ utilization || 0 }}</b>%</li>
+            </ul>
+          </div>
+    </div>
+
+    <div class="height0 gap20 padding15">
+      <div class="h360 col w300 bgWhite borderRadius15 darkShadow">
+        <p class="size16 str500">Payment Status</p>
+        <canvas id="payChart" class="width40"></canvas>
+      </div>
+      <div class="h360 col w320 bgWhite borderRadius15 darkShadow padding10">
+        <p class="size16 str500">Packages Distribution</p>
+        <canvas id="packageChart"  class="width40"></canvas>
+      </div>
+      <div class="h360 width70 bgWhite borderRadius15 darkShadow padding10">
+            <canvas id="timeSeriesChart"></canvas>
+      </div>
+    </div>
+
+    <div class="height0">
+    </div>
+    
+    <div class="height card shadowNone alignStart gap20 padding15 borderRadius10 hidden" id="reportCard">
+      <div class="height0 col alignStart justifyStart gap10 padding10">
+        <div class="height0 col alignStart">
+           
+          <p class="size34 str500 marginBottom10 textCenter"> <img src="/images/gem.png" alt="" class="h50 w50 borderRadius500 borderPrimary padding10"> Banda ni Shaho</p>
+          <p class="size12 str500"><%= user.phone %> | <%= user.email %> | <%= user.address %></p>
+        </div>
+        <div class="height0 col alignStart">
+          <p class="size30 str500">Transactions Report</p>
+          <p class="size16 str400">Printed: <span id="printDate" class="size16 str400"></span></p>
+
+        </div>
+        <table class="size14 borderPrimary">
+          <thead>
+            <tr>
+              <th style="width: 15%;">Client</th>
+              <th style="width: 27%;">Address</th>
+              <th style="width: 13%;">Email</th>
+              <th style="width: 8%;">Phone</th>
+              <th style="width: 8%;">Package</th>
+              <th style="width: 8%;">Start</th>
+              <th style="width: 8%;">End</th>
+              <th style="width: 7%;">Status</th>
+              <th style="width: 6%;">Payment</th>
+            </tr>
+          </thead>
+<tbody>
+  <tr v-for="r in recent" :key="r.id">
+    <td>{{ r.client }}</td>
+    <td>{{ formatAddress(r) }}</td>
+    <td>{{ r.email }}</td>
+    <td>{{ r.phone }}</td>
+    <td>{{ r.package }}</td>
+    <td>{{ formatDate(r.start) }}</td>
+    <td>{{ formatDate(r.end) }}</td>
+    <td>{{ r.status }}</td>
+    <td>{{ r.paymentStatus }}</td>
+  </tr>
+</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="height0 gap20 padding15 alignStart">
+      <div class="h500 width80 bgWhite borderRadius15 darkShadow padding10">
+          <canvas id="eventChart"></canvas>
+      </div>
+      <table class="borderRadius20 width20" id="eventTable">
+        <thead>
+          <tr>
+            <th class="textLeft width45">Type</th>
+            <th class="textCenter width25">Count</th>
+            <th class="textCenter width30">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="e in events" :key="e._id">
+            <td class="textLeft">{{ e._id || 'Unknown' }}</td>
+            <td class="textCenter">{{ e.count || 0 }}</td>
+            <td class="textCenter">{{ percent(e.percent) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+  </div>
+<!-- Vue -->
+<script>
+  const app = Vue.createApp({
+
+    data() {
+      return {
+        filter: 'thisyear',
+        date: '',
+        start: '',
+        end: '',
+
+        totals: {},
+        avgLeadDays: 0,
+        avgDurationDays: 0,
+        totalBookedDays: 0,
+        utilization: 0,
+
+        recent: [],
+        events: [],
+        timeSeries: [],
+        packages: [],
+        payStats: {},
+
+        charts: {}
+      }
+    },
+
+    methods: {
+
+      percent(val) {
+        return val ? val + '%' : '0%';
+      },
+
+      formatDate(d) {
+        return d ? new Date(d).toLocaleDateString() : '-';
+      },
+
+      formatAddress(r) {
+        return `${r.purok || '-'} ${r.barangay || '-'}, ${r.city || '-'}, ${r.province || '-'}`;
+      },
+
+      async loadAnalytics() {
+
+        if (this.filter === 'date' && !this.date) return;
+        if (this.filter === 'daterange' && (!this.start || !this.end)) return;
+
+        let url = `/analytics?filter=${this.filter}`;
+        if (this.filter === "daterange") url += `&start=${this.start}&end=${this.end}`;
+        if (this.filter === "date") url += `&date=${this.date}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.success) return;
+
+        this.totals = data.totals || {};
+        this.avgLeadDays = data.avgLeadDays || 0;
+        this.avgDurationDays = data.avgDurationDays || 0;
+        this.totalBookedDays = data.totalBookedDays || 0;
+        this.utilization = data.utilization || 0;
+
+        this.recent = data.recent || [];
+        this.events = data.events || [];
+        this.timeSeries = data.timeSeries || [];
+        this.packages = data.packages || [];
+        this.payStats = data.payStats || {};
+
+        this.renderCharts();
+      },
+
+      renderCharts() {
+
+        // Revenue
+        const ctx = document.getElementById('earningsChart').getContext('2d');
+        
+        if(this.charts.earningsChart) this.charts.earningsChart.destroy();
+
+        this.charts.earningsChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: this.timeSeries.map(d => d.label),
+            datasets: [{
+              label: 'Revenue',
+              data: this.timeSeries.map(d => d.earnings),
+              backgroundColor: 'rgba(255, 165, 0, 0.2)',
+              borderColor: 'orange',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+
+        // Payment Status
+        const payCtx = document.getElementById('payChart').getContext('2d');
+        if (this.charts.payChart) this.charts.payChart.destroy();
+        this.charts.payChart = new Chart(payCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ["Paid", "Unpaid"],
+            datasets: [{
+              data: [this.payStats.Paid || 0, this.payStats.Unpaid || 0],
+              backgroundColor: ["#20bf6b", "gray"]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: "bottom", labels: { color: "#333" } } }
+          }
+        });
+
+        // Packages Distribution
+        const packageCtx = document.getElementById('packageChart').getContext('2d');
+        if (this.charts.packageChart) this.charts.packageChart.destroy();
+        this.charts.packageChart = new Chart(packageCtx, {
+          type: 'doughnut',
+          data: {
+            labels: this.packages.map(p => p._id || "Unknown"),
+            datasets: [{
+              data: this.packages.map(p => p.count),
+              backgroundColor: ["#fa8231", "#f7b731", "#fed330", "#20bf6b", "#eb3b5a"]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: "bottom", labels: { color: "#333" } } }
+          }
+        });
+
+        // Time Series
+        const tsCtx = document.getElementById('timeSeriesChart').getContext('2d');
+        if (this.charts.timeSeriesChart) this.charts.timeSeriesChart.destroy();
+        this.charts.timeSeriesChart = new Chart(tsCtx, {
+          type: 'bar',
+          data: {
+            labels: this.timeSeries.map(t => t.label),
+            datasets: [
+              { label: "Success", data: this.timeSeries.map(t => t.success || 0), backgroundColor: "#20bf6b" },
+              { label: "Cancelled", data: this.timeSeries.map(t => t.cancelled || 0), backgroundColor: "gray" }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: {
+              x: { grid: { display: true }, ticks: { color: "#666" } },
+              y: { grid: { display: false }, ticks: { color: "#666", beginAtZero: true } }
+            },
+            categoryPercentage: 0.7,
+            barPercentage: 0.8,
+            borderRadius: 5
+          }
+        });
+
+        // Event Types
+        const eventCtx = document.getElementById('eventChart').getContext('2d');
+        if (this.charts.eventChart) this.charts.eventChart.destroy();
+        this.charts.eventChart = new Chart(eventCtx, {
+          type: 'bar',
+          data: {
+            labels: this.events.map(e => e._id || "Unknown"),
+            datasets: [{
+              label: "Number of Events",
+              data: this.events.map(e => e.count || 0),
+              backgroundColor: [
+                "#fa8231","#20bf6b","#eb3b5a","#45aaf2","#f7b731",
+                "#a55eea","#778ca3","#26de81","#fd9644","#2bcbba","#8854d0"
+              ],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: "Event Type Distribution", color: "#333", font: { size: 16 } }
+            },
+            scales: {
+              x: { ticks: { color: "#333", autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: true } },
+              y: { beginAtZero: true, ticks: { color: "#333", display: false }, grid: { display: false } }
+            }
+          }
+        });
+
+      }
+    },
+
+    mounted() {
+      this.loadAnalytics();
+    },
+
+    watch: {
+      filter() { this.loadAnalytics(); },
+      date() { this.loadAnalytics(); },
+      start() { if (this.end) this.loadAnalytics(); },
+      end() { if (this.start) this.loadAnalytics(); }
+    }
+
+  });
+
+  app.mount('#app');
+</script>
+
+</body>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || "Banda ni Shaho" %></title>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/responsive.css">
+    <link rel="icon" href="/images/gem.png">
+
+    <style>
+        .active {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="col bgSoft">
+<% if(user && (user.access === 1 || user.access === "1")) { %>
+        
+    <div class="absolute top0 left0 bgModal padding30 hidden index50" id="prfCard">
+        <div class="height0 padding30 width30 borderRadius15 relative bgWhite col gap5 relative">
+            <a href="javascript:void(0)" class="nav cnav absolute top10 right10 index50" id="prfX"><i class="fas fa-xmark"></i></a>
+            <div class="height0 width0 paddingBlock5">
+                <img src="/images/profile.jpg" alt="" class="h90 borderRadius500 borderPrimary">
+            </div>
+            <div class="height0 col alignStart gap5" id="layout">
+                <p class="size24 str500 colorPrimary">{{ profile.firstName }} {{ profile.middleName }} {{ profile.lastName }} {{ profile.extName }}</p>
+                <p class="size16 str400 colorPrimary"> <i class="fas fa-envelope w20 inline marginRight10"></i>{{ profile.email }}</p>
+                <p class="size16 str400 colorPrimary"> <i class="fas fa-phone w20 inline marginRight10"></i>{{ profile.phone }}</p>
+                <p class="size16 str400 colorPrimary"> <i class="fas fa-house w20 inline marginRight10"></i>{{ profile.address }}</p>
+            </div>
+            <br>
+            <hr>
+            <br>
+            <div class="height0 justifyStart gap10 padding5">
+            </div>
+        </div>
+    </div>
+
+    <div class="abstractBG relative height10 borderRadius20 padding5" style="z-index: 55;" id="hdd">
+        <div class="justifyStart gap10">
+            <div class="logo">
+                <img src="/images/gem.png" class="" style="border: 0.5px solid white;">
+            </div>
+            <div class="logoLabel col">
+                <p class="lgtitle">Banda ni Shaho</p>
+            </div>
+        </div>
+
+        <button type="button" class="banda-menu-toggle" aria-controls="dd" aria-expanded="false" aria-label="Open navigation menu"><i class="fas fa-bars"></i> Menu</button>
+        <div class="relative row justifyCenter" id="dd">
+            <a href="/" class="nav mnav hidden <%= activePage === 'abt' ? 'active' : '' %>"><i class="fas fa-share-from-square"></i> LOGOUT</a>
+            <a href="/dsb" class="nav mnav <%= activePage === 'dsb' ? 'active' : '' %>"><i class="bi bi-grid-fill"></i> Dashboard</a>
+            <a href="/app" class="nav mnav <%= activePage === 'app' ? 'active' : '' %>"><i class="fas fa-calendar"></i> Appointment</a>
+        </div>
+        
+
+        <div class="justifyEnd gap10 padding10">
+
+            <div class="relative row justifyCenter hidden width0" id="dd2">
+                <a href="/update" class="nav mnav  borderWhite"><i class="fas fa-pen"></i>UPDATE</a>
+                <a href="/reset" class="nav mnav  borderWhite"><i class="fas fa-key"></i>RESET</a>
+                <a href="/logout" class="nav mnav borderWhite"><i class="fas fa-share-from-square"></i> LOGOUT</a>
+            </div>
+            <div class="height0 col width0 alignEnd" id="y2">
+                <p class="size12 str400">Welcome Admin</p>
+                <p class="size14 str400"><%= user.firstName %> <%= user.lastName %></p>
+            </div>
+            <a href="javascript:void(0)" id="prfBtn" style="border: 1px solid white; border-radius: 50%; padding: 5px; background-color: transparent; height: 50px; width: 50px;">
+                <img src="<%= user.photo ? user.photo : '/images/profile.jpg' %> " alt="Profile Image" onerror="this.onerror=null; this.src='/images/profile.jpg';" class="borderRadius500">
+            </a>
+        </div>
+    </div>
+
+    <div class="height90" id="mf">
+        <%- body %>
+    </div>
+
+<% } %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.querySelector('.banda-menu-toggle');
+    const nav = document.getElementById('dd');
+    if (!toggle || !nav) return;
+    const closeMenu = () => { nav.classList.remove('banda-menu-open'); toggle.setAttribute('aria-expanded','false'); };
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('banda-menu-open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+    nav.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
+    document.addEventListener('click', event => { if (!nav.contains(event.target) && !toggle.contains(event.target)) closeMenu(); });
+  });
+  const prfBtn = document.getElementById('prfBtn');
+  const prfCard = document.getElementById('prfCard');
+  const prfX = document.getElementById('prfX');
+  const y1 = document.getElementById('y1');
+  const y2 = document.getElementById('y2');
+  const dd = document.getElementById('dd');
+  const dd2 = document.getElementById('dd2');
+
+  if (prfBtn && prfCard && prfX && dd2 && dd && y2) {
+    prfBtn.addEventListener('click', () => {
+      prfCard.classList.remove('hidden');
+      dd2.classList.remove('hidden');
+      dd.classList.add('hidden');
+      y2.classList.add('hidden');
+    });
+
+    prfX.addEventListener('click', () => {
+      prfCard.classList.add('hidden');
+      dd2.classList.add('hidden');
+      dd.classList.remove('hidden');
+      y2.classList.remove('hidden');
+    });
+  }
+</script>
+
+<!-- Vue scripts -->
+
+<script>
+
+const layoutApp = Vue.createApp({
+    data() {
+        return {
+            profile: {}  // empty object initially
+        }
+    },
+    async mounted() {
+        try {
+            const res = await fetch('/api/prf');  // fetch JSON from backend
+            const data = await res.json();
+            this.profile = data.user;             // now profile.email exists
+        } catch (err) {
+            console.error('Failed to fetch profile', err);
+        }
+    }
+});
+
+if (document.getElementById('layout')) {
+  layoutApp.mount('#layout');  // mount only when the profile container exists
+}
+
+</script>
+
+
+</body>
+</html>

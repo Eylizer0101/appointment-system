@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Packages | Banda ni Shaho</title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/responsive.css">
+  <link rel="icon" href="/images/logo.png">
+
+  <style>
+    :root {
+      --accent: #0b74ff;
+      --muted: rgba(255,255,255,0.6);
+      --card-bg: rgba(255,255,255,0.03);
+      --card-border: rgba(255,255,255,0.08);
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(180deg,#07070a 0%, #0a1222 100%);
+      color: #fff;
+      margin: 0;
+      padding: 40px 10%;
+    }
+
+    header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:16px;
+      margin-bottom:32px;
+    }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-decoration:none;
+      color: #fff;
+    }
+
+    .brand img {
+      width:48px;
+      height:48px;
+      border-radius:10px;
+    }
+
+    .brand h1 {
+      margin:0;
+      font-size:20px;
+      font-weight:600;
+    }
+
+    nav a {
+      color: rgba(255,255,255,0.85);
+      text-decoration:none;
+      margin-left:18px;
+      font-weight:500;
+    }
+
+    nav a:hover {
+      color: white;
+    }
+
+    .hero {
+      display:flex;
+      gap:28px;
+      align-items:center;
+      justify-content:space-between;
+      padding:28px;
+      background: linear-gradient(90deg, rgba(11,116,255,0.12), rgba(255,255,255,0.02));
+      border-radius:16px;
+      margin-bottom:28px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .hero h2 {
+      margin:0 0 6px;
+      font-size:34px;
+    }
+
+    .hero p {
+      margin:0 0 14px;
+      color: var(--muted);
+    }
+
+    .btn {
+      display:inline-block;
+      padding:10px 16px;
+      border-radius:10px;
+      text-decoration:none;
+      font-weight:600;
+      border: 1px solid transparent;
+      transition: 0.2s ease;
+    }
+
+    .btn-primary {
+      background:var(--accent);
+      color:white;
+    }
+
+    .btn-primary:hover {
+      transform:translateY(-1px);
+    }
+
+    .btn-ghost {
+      border-color: var(--card-border);
+      color:white;
+    }
+
+    .packages {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap:18px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius:16px;
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      border: 1px solid var(--card-border);
+      transition: 0.25s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .recommended {
+      border-color: rgba(255,215,107,0.25);
+      background: rgba(255,215,107,0.05);
+    }
+
+    .price {
+      font-weight:700;
+      font-size:20px;
+    }
+
+    .lead {
+      color: var(--muted);
+      margin:6px 0 10px;
+    }
+
+    .features {
+      padding-left:18px;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .features li {
+      margin-bottom:6px;
+    }
+
+    .actions {
+      margin-top:auto;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .info {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap:18px;
+      margin-top:26px;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.02);
+      padding:18px;
+      border-radius:14px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    footer {
+      margin-top:36px;
+      font-size:14px;
+      color: var(--muted);
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    footer a {
+      color: rgba(255,255,255,0.8);
+      text-decoration:none;
+    }
+
+    footer a:hover {
+      color:white;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 24px 6%;
+      }
+
+      .hero {
+        flex-direction:column;
+        align-items:flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/">
+    <img src="/images/logo.png" alt="Banda ni Shaho logo">
+    <div>
+      <h1>Banda ni Shaho</h1>
+      <div style="font-size:12px; color:var(--muted);">Live music for every occasion</div>
+    </div>
+  </a>
+
+  <nav>
+    <a href="/">Home</a>
+    <a href="/pr">Packages</a>
+    <a href="/rg">Book Now</a>
+    <a href="/lg">Admin</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <h2>Our Packages</h2>
+    <p>Choose a package that fits your event. Simple pricing, flexible performances.</p>
+    <a class="btn btn-primary" href="/rg">Book Now</a>
+  </div>
+
+  <img src="/images/gem.png" alt="" style="max-width:160px; opacity:0.9;">
+</section>
+
+<section class="packages">
+
+  <article class="card">
+    <h3>Basic <span class="price">₱5,000</span></h3>
+    <p class="lead">For small gatherings</p>
+    <ul class="features">
+      <li>Acoustic-style performance</li>
+      <li>Shorter duration</li>
+      <li>Simple sound setup</li>
+      <li>Limited song requests</li>
+    </ul>
+    <div class="actions">
+      <a class="btn btn-primary" href="/rg?package=Basic">Book Basic</a>
+      <a class="btn btn-ghost" href="/rg?package=Basic">Details</a>
+    </div>
+  </article>
+
+  <article class="card recommended">
+    <h3>Standard <span class="price">₱10,000</span></h3>
+    <p class="lead">Most popular choice</p>
+    <ul class="features">
+      <li>Full band performance</li>
+      <li>Extended play time</li>
+      <li>Enhanced sound system</li>
+      <li>More song requests</li>
+    </ul>
+    <div class="actions">
+      <a class="btn btn-primary" href="/rg?package=Standard">Book Standard</a>
+      <a class="btn btn-ghost" href="/rg?package=Standard">Details</a>
+    </div>
+  </article>
+
+  <article class="card">
+    <h3>Premium <span class="price">₱20,000</span></h3>
+    <p class="lead">For major events</p>
+    <ul class="features">
+      <li>Premium band setup</li>
+      <li>Longest performance</li>
+      <li>Priority customization</li>
+      <li>Professional sound</li>
+    </ul>
+    <div class="actions">
+      <a class="btn btn-primary" href="/rg?package=Premium">Book Premium</a>
+      <a class="btn btn-ghost" href="/rg?package=Premium">Details</a>
+    </div>
+  </article>
+
+</section>
+
+<section class="info">
+  <div class="box">
+    <h4>How it works</h4>
+    <ol>
+      <li>Select a package</li>
+      <li>Submit booking form</li>
+      <li>Confirm schedule</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h4>Questions?</h4>
+    <p>Email: info@bandanishaho.example</p>
+    <p>Phone: 0912-345-6789</p>
+  </div>
+</section>
+
+<footer>
+  <div>© <span id="year"></span> Banda ni Shaho</div>
+  <a href="/lg">Admin Login</a>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

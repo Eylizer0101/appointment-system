@@ -1,0 +1,145 @@
+<% layout('layout') %>
+<head>
+  <style>
+    #dd {
+      display: none !important;
+      opacity: 0 !important;
+    }
+    .hidden {
+      display: none !important;
+    }
+        .disabled-link {
+            opacity: 0.5;
+            pointer-events: none; /* disables the click */
+            cursor: not-allowed;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+  </style>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="absolute top0 left0 bgModal padding30 index60" id="updateCard">
+      <div class="height0 padding40 width25 borderRadius15 relative bgWhite" id="resetFormCard">
+        <a href="javascript:history.back()" class="nav cnav absolute top10 right10 index50" id="updateX">
+          <i class="fas fa-xmark"></i>
+        </a>
+
+        <form @submit.prevent="changePassword" class="padding5 gap10" id="resetForm">
+          <input type="hidden" name="id" value="<%= user._id %>">
+
+          <div class="field">
+            <p class="size30 str500">Reset Password</p>
+          </div>
+
+          <div class="field password width100">
+            <label for="currentPassword">Current Password</label>
+            <input :type="showPasswordCurrent ? 'text' : 'password'" id="currentPassword" v-model="currentPassword" name="currentPassword" required>
+                        <span class="showPass faded"
+                            @click="showPasswordCurrent = !showPasswordCurrent">
+                            {{ showPasswordCurrent ? 'hide' : 'show' }}
+                        </span>
+          </div>
+
+          <div class="field password width100">
+            <label for="newPassword">New Password</label>
+            <input :type="showPasswordNew ? 'text' : 'password'" id="newPassword" v-model="newPassword" @input="passwordMatch" name="newPassword" required>
+                        <span class="showPass faded"
+                            @click="showPasswordNew = !showPasswordNew">
+                            {{ showPasswordNew ? 'hide' : 'show' }}
+                        </span>
+          </div>
+
+          <div class="field password width100">
+            <label for="confirmPassword">Confirm Password</label>
+            <input :type="showPasswordConf ? 'text' : 'password'" id="confirmPassword" v-model="confirmPassword" @input="passwordMatch" name="confirmPassword" required>
+                        <span class="showPass faded"
+                            @click="showPasswordConf = !showPasswordConf">
+                            {{ showPasswordConf ? 'hide' : 'show' }}
+                        </span>
+          </div>
+
+          <p v-if="errorMessage" style="color:red">{{ errorMessage }}</p>
+
+          <div class="height0 justifyEnd padding5">
+            <button type="submit" :disabled="matchError" class="nav pnav width100">Submit</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="height0 padding40 width25 borderRadius20 relative bgWhite col hidden" id="successCard">
+        <i class="fas fa-check-circle green size80"></i>
+        <br>
+        <p class="size20 str500 textCenter">Password reset successfully!</p>
+        <br>
+        <div class="height0 justifyEnd padding5 gap10">
+          <button class="nav border0 width100" onclick="location.href='/dsb'">Got It!</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+<!-- Vue scripts -->
+ <script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+                errorMessage: '',
+                matchError: false,
+                showPasswordCurrent: false,
+                showPasswordNew: false,
+                showPasswordConf: false,
+            }
+        },
+
+        methods: {
+          passwordMatch() {
+            if (this.newPassword !== this.confirmPassword) {
+              this.matchError = true;
+              this.errorMessage = "Passwords do not match!"
+            } else {
+              this.matchError = false;
+              this.errorMessage = '';
+            }
+          },
+
+          async changePassword() {
+                    try {
+                        const res = await fetch('/reset', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                currentPassword: this.currentPassword,
+                                newPassword: this.newPassword,
+                                confirmPassword: this.confirmPassword
+                            })
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            this.errorMessage = data.error;
+                            return;
+                        }
+
+                        window.location.href = data.redirectPath;
+
+                    } catch (err) {
+                        this.errorMessage = "An error occurred.";
+                        console.log(err);
+                    }
+          }
+        }
+    });
+
+    app.mount('#app');
+ </script>
+
+</body>
