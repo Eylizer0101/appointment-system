@@ -316,7 +316,13 @@ PHINMA Araullo University
 
 ## License
 
-The project's `package.json` declares `ISC` as its package license. **No separate `LICENSE` file was visible in the checked repository root.** If you intend to distribute this repository under the ISC license, add the corresponding license text and copyright notice in a `LICENSE` file.
+© 2026 Eylizer De Afria. All Rights Reserved.
+
+This project is provided publicly for educational, portfolio, viewing, and evaluation purposes only. **No permission is granted to copy, modify, redistribute, sublicense, or use the project commercially** without prior written permission from the relevant copyright holder(s).
+
+Public availability on GitHub does not make the project open source. Any license field in a `package.json` file should not be interpreted as a repository-wide permission grant. Third-party libraries, assets, and contributions remain subject to their own licenses and ownership rights.
+
+For permission inquiries, contact the repository owner through GitHub.
 
 ---
 
